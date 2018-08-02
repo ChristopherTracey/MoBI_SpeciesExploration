@@ -4,10 +4,9 @@
 #           exploration
 # Author:   Christopher Tracey
 # Created:  2018-08-01
-# Updates:  
-#
+# Updates:  8/2 - added common names, added in data for "no EOs"
 # To Do List/Future Ideas:
-#           - incorporate TVA data
+#           - incorporate TVA/NN data
 #           - 
 #---------------------------------------------------------------------------------------------
 
@@ -37,6 +36,20 @@ MoBI_EO <- MoBI_EO[which(MoBI_EO$STATE!="AB" & MoBI_EO$STATE!="NS" & MoBI_EO$STA
 MoBI_EO$extant <- ifelse(MoBI_EO$EORANK!="H" & MoBI_EO$EORANK!="H?" & MoBI_EO$EORANK!="X" & MoBI_EO$EORANK!="X?", "yes","no")
 MoBI_EOsum <- MoBI_EO[which(MoBI_EO$extant=="yes"),] 
 MoBI_EOsum <- aggregate(extant~STATE+GNAME,data=MoBI_EOsum,FUN=length) # counts the number of extant records
+# get EOs with no extant records
+MoBI_EOsumNone <- MoBI_EO[which(MoBI_EO$extant!="yes"),] 
+MoBI_EOsumNone <- aggregate(extant~STATE+GNAME,data=MoBI_EOsumNone,FUN=length) # counts the number of E/X records
+MoBI_EOsumNone$extant <- 0
+
+MoBI_EOsum$code <- paste(MoBI_EOsum$STATE,MoBI_EOsum$GNAME,sep="_")
+MoBI_EOsumNone$code <- paste(MoBI_EOsumNone$STATE,MoBI_EOsumNone$GNAME,sep="_")
+MoBI_EOsumNone <- MoBI_EOsumNone[!(MoBI_EOsumNone$code %in% MoBI_EOsum$code),]
+
+MoBI_EOsum <- rbind(MoBI_EOsum,MoBI_EOsumNone)
+MoBI_EOsum$code <- NULL
+
+# get common names and join them into the MoBI_states df
+commonnames <- unique(MoBI_EO[c("GNAME","GCOMNAME")])
 
 #######################################################################################################
 # make the maps
@@ -58,9 +71,15 @@ srank_rnd <- read.csv(here("rounded_srank.csv"), stringsAsFactors=FALSE)
 MoBI_states <- merge(MoBI_states,srank_rnd,by.x="SRANK", by.y="S.RANK", all.x=TRUE) # ,all.x=TRUE
 MoBI_states <- merge(MoBI_states,MoBI_species[c("GNAME","TAX_GROUP","G_RANK")],by="GNAME")
 MoBI_states <- merge(MoBI_states,MoBI_EOsum, by=c("GNAME","STATE"), all.x=TRUE)
+MoBI_states <- merge(MoBI_states,commonnames, by="GNAME", all.x=TRUE)
 
 # EO presence symbols
-MoBI_states$EOpres <- as.numeric(ifelse(!is.na(MoBI_states$extant), "16","1"))
+MoBI_states$EOpres <- as.numeric(ifelse(MoBI_states$extant==0, "1", "16") )
+
+MoBI_states$EOpres[is.na(MoBI_states$EOpres)] <- 4
+
+
+
 
 # assign colors to the ranks
 MoBI_states$color[MoBI_states$Rounded.S.RANK=="SX"]  <- "#003593"
@@ -84,7 +103,7 @@ for (i in 1:length(gnames)) {
   plot(state_status, col=(state_status@data$color))
   plot(state_eo, pch=state_eo$EOpres, cex=0.6, add=TRUE)
   #text(x=12,y=NULL,labels="open circles = no extant EO data; closed circles = extant EO data")
-  title(main=paste(MoBI_sp$GNAME[1], MoBI_sp$G_RANK[1], sep=" - " ),sub=MoBI_sp$TAX_GROUP[1] )
+  title(main=paste(MoBI_sp$GCOMNAME[1]," (",MoBI_sp$GNAME[1],") - ",MoBI_sp$G_RANK[1], sep=""),sub=MoBI_sp$TAX_GROUP[1] )
   legend(x="left",legend=c("SX","SH","S1","S2","S3","S4","S5","SNR","SU","SNA"),
          fill=c("#003593","#6F97F3","#D30200","#FF914B","#FFFF2D","#64FE3A","#039B2E","#9B656C","#9B656C","#FFC8FF"), bty="n" )
   dev.off() # turns off the plotteMor writing to pngs
