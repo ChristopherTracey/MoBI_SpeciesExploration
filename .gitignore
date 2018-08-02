@@ -21,3 +21,10 @@ $RECYCLE.BIN/
 # =========================
 # Operating System Files
 # =========================
+.Rproj.user/21E0A21A/sources/prop/A09FC223
+*.png
+*.accdb
+MoBI_EO_Export_Hab_Data_07272018.laccdb
+MoBI_EO_export_from_WL_072018.csv
+JulyMoBI_list.csv
+*.Rproj
