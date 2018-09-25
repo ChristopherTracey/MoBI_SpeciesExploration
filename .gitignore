@@ -15,6 +15,7 @@ vignettes/*.pdf
 # folders
 /data/
 /MoBI_BoundaryData.gdb/
+/old_attempt/
 
 
 # Windows thumbnail cache files
