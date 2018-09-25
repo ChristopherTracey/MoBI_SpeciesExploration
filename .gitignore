@@ -1,3 +1,22 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# folders
+/data/
+/MoBI_BoundaryData.gdb/
+
+
 # Windows thumbnail cache files
 Thumbs.db
 ehthumbs.db
@@ -28,3 +47,4 @@ MoBI_EO_Export_Hab_Data_07272018.laccdb
 MoBI_EO_export_from_WL_072018.csv
 JulyMoBI_list.csv
 *.Rproj
+.Rproj.user
