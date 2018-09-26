@@ -15,7 +15,7 @@ vignettes/*.pdf
 # folders
 /data/
 /MoBI_BoundaryData.gdb/
-/old_attempt/
+/_old_attempt/
 
 
 # Windows thumbnail cache files
@@ -49,3 +49,6 @@ MoBI_EO_export_from_WL_072018.csv
 JulyMoBI_list.csv
 *.Rproj
 .Rproj.user
+*.dbf
+MoBI_iNat.shp
+*.shx

@@ -13,10 +13,13 @@ if (!requireNamespace("openxlsx", quietly=TRUE)) install.packages("openxlsx")
 require(openxlsx)
 if (!requireNamespace("reshape2", quietly=TRUE)) install.packages("reshape2")
 require(reshape2)
+if (!requireNamespace("tidyr", quietly=TRUE)) install.packages("tidyr")
+require(tidyr)
+
 
 ################################################################################################
 #get mobi species list file
-MoBI_files <- list.files(path=here("data/NatureServe"), pattern=".xlsx$")
+MoBI_files <- list.files(path=here("data/NatureServe"), pattern=".xlsx$")  # --- make sure your excel file is not open.
 MoBI_files
 #look at the output and choose which shapefile you want to run
 #enter its location in the list (first = 1, second = 2, etc)
@@ -25,6 +28,10 @@ MoBI_file <- here("data/NatureServe",MoBI_files[n])
 
 #get a list of the sheets in the file
 MoBI_file_sheets <- getSheetNames(MoBI_file)
+MoBI_file_sheets
+#look at the output and choose which excel sheet you want to load
+#enter its location in the list (first = 1, second = 2, etc)
+n <- 1
 
 # geodatabase name
 gdb_boundaries <- "MoBI_BoundaryData.gdb"
@@ -33,7 +40,7 @@ states <- "US_States"
 
 ################################################################################################
 # create the MoBI Species List
-MoBI_species <- read.xlsx(xlsxFile=MoBI_file, sheet=MoBI_file_sheets[1], skipEmptyRows = FALSE)
+MoBI_species <- read.xlsx(xlsxFile=MoBI_file, sheet=MoBI_file_sheets[n], skipEmptyRows = FALSE)
 # change column names
 colnames(MoBI_species)[colnames(MoBI_species)=="Scientific.Name"] <- "GNAME"
 colnames(MoBI_species)[colnames(MoBI_species)=="Common.Name"] <- "GCOMNAME"
@@ -68,8 +75,29 @@ write.csv(MoBI_Sp_x_St, here("data/NatureServe","backup_MoBI_Sp_x_St.csv"))
 # create the MoBI synomony for plants   # are there other taxa groups we need to deal with
 MoBI_syn <- read.xlsx(xlsxFile=MoBI_file, sheet=MoBI_file_sheets[2], skipEmptyRows = FALSE)
 # change column names
-colnames(MoBI_syn)[colnames(MoBI_syn)=="EGT.ID_Scientific.Name"] <- "EGT.ID_GNAME"
-colnames(MoBI_syn)[colnames(MoBI_syn)=="Related_Scientific.Name"] <- "Related_GNAME"
+colnames(MoBI_syn)[colnames(MoBI_syn)=="EGT.ID_Scientific.Name"] <- "GNAME"
+colnames(MoBI_syn)[colnames(MoBI_syn)=="Related_SCIENTIFIC_NAME"] <- "SYNONYMS"
+MoBI_syn <- MoBI_syn[c("GNAME","SYNONYMS")]
+MoBI_syn$type <- "EGT_ID"
+
+# get synomyns from the main worksheet tab
+tmp_synonomy <- MoBI_species[c("GNAME","SYNONYMS")]
+tmp_synonomy <- tmp_synonomy[which(!is.na(tmp_synonomy$SYNONYMS)),]
+tmp_synonomy <- separate_rows(tmp_synonomy, "SYNONYMS",sep=",")
+tmp_synonomy$type <- "synonym"
+
+# get RELATED_INFRAS_EO_NEW
+tmp_infrataxa <- MoBI_species[c("GNAME","RELATED_INFRAS_EO_NEW")]
+tmp_infrataxa <- tmp_infrataxa[which(!is.na(tmp_infrataxa$RELATED_INFRAS_EO_NEW)),]
+
+tmp_infrataxa <- separate_rows(tmp_infrataxa, "RELATED_INFRAS_EO_NEW",sep="\\|")
+tmp_infrataxa$RELATED_INFRAS_EO_NEW <- gsub("\\s*\\([^\\)]+\\)","",as.character(tmp_infrataxa$RELATED_INFRAS_EO_NEW))
+tmp_infrataxa$type <- "infrataxa"
+colnames(tmp_infrataxa)[colnames(tmp_infrataxa) == 'RELATED_INFRAS_EO_NEW'] <- 'SYNONYMS'
+
+# join the three tables together
+MoBI_syn <- rbind(MoBI_syn,tmp_synonomy,tmp_infrataxa)
+MoBI_syn$SYNONYMS <- trimws(MoBI_syn$SYNONYMS, which="both")
 
 # write out the data for a backup
 write.csv(MoBI_syn, here("data/NatureServe","backup_MoBI_syn.csv"))
